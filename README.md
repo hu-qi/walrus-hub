@@ -1,45 +1,85 @@
 # Walrus Model Hub
 
-A decentralized AI model sharing platform built on Walrus storage and Sui blockchain.
+A decentralized AI model sharing platform built on Walrus storage and Sui blockchain, featuring AI-powered metadata generation and blockchain-verified download tracking.
 
 [中文文档](./README.zh.md)
 
 ## Overview
 
-Walrus Model Hub is a decentralized AI model hosting and sharing platform that combines:
-- **Walrus**: Decentralized storage network for model files
-- **Sui Blockchain**: For model metadata management and ownership tracking
-- **Next.js**: Modern web frontend interface
+Walrus Model Hub is a cutting-edge decentralized platform for hosting and sharing AI models, combining multiple advanced technologies:
+
+- **Walrus**: Decentralized blob storage network for secure model file hosting
+- **Sui Blockchain**: On-chain model registry and download tracking with event emission
+- **Next.js 16**: Modern React-based web interface with server-side rendering
+- **AI Integration**: GLM-4.5-Flash LLM for intelligent metadata generation
+
+## ✨ Key Features
+
+### 🤖 AI-Powered Metadata Generation
+- **Smart Description**: Automatically generates detailed model descriptions using GLM-4.5-Flash
+- **Intelligent Tagging**: AI suggests relevant tags based on model filename and content
+- **Streaming Interface**: Real-time typing effect as metadata is generated
+- **One-Click Enhancement**: Instantly improve your model documentation
+
+### 📦 Decentralized Storage
+- **Walrus Integration**: Store model files on decentralized blob storage
+- **Permanent Access**: Models remain accessible via blob IDs
+- **Network Resilience**: Distributed storage ensures high availability
+
+### ⛓️ Blockchain-Verified Tracking
+- **On-Chain Registry**: All models registered on Sui blockchain
+- **Download Tracking**: Every download recorded as a blockchain transaction
+- **Real-Time Statistics**: Live download counts updated from blockchain events
+- **Ownership Proof**: Uploader addresses verified on-chain
+
+### 🎨 Interactive User Experience
+- **Confetti Animations**: Celebrate successful uploads and downloads
+- **Toast Notifications**: Modern, non-intrusive user feedback
+- **Wallet Persistence**: Stay connected across page refreshes
+- **Auto-Refresh**: Model list updates automatically after uploads
+
+### 🔗 Explorer Integration
+- **Walruscan Links**: Direct access to blob details on Walruscan explorer
+- **Suiscan Links**: View uploader addresses on Suiscan
+- **Network-Aware URLs**: Automatically uses correct explorer for testnet/mainnet
 
 ## Project Structure
 
 ```
 walrus/
-├── walrus_model_hub/     # Sui Move smart contracts
-│   ├── sources/          # Move source code
-│   ├── tests/            # Contract tests
-│   └── Move.toml         # Move project configuration
-├── web/                  # Next.js frontend application
-│   ├── app/              # Next.js app pages
-│   ├── components/       # React components
-│   ├── lib/              # Utility libraries
-│   └── public/           # Static assets
-├── init.md               # Walrus installation guide
-└── test_walrus_endpoints.sh  # Walrus endpoint testing script
+├── walrus_model_hub/          # Sui Move smart contracts
+│   ├── sources/
+│   │   └── model_hub.move     # Core registry contract
+│   ├── tests/                 # Contract test suite
+│   └── Move.toml              # Move package configuration
+├── web/                       # Next.js frontend application
+│   ├── app/
+│   │   ├── page.tsx           # Home page with model listing
+│   │   ├── upload/            # Model upload page
+│   │   ├── model/[blobId]/    # Model detail page
+│   │   └── api/
+│   │       └── generate-metadata/  # AI metadata generation endpoint
+│   ├── components/            # Reusable React components
+│   ├── lib/
+│   │   ├── contracts.ts       # Contract addresses (auto-generated)
+│   │   ├── walrus.ts          # Walrus storage integration
+│   │   ├── types.ts           # TypeScript type definitions
+│   │   └── utils.ts           # Utility functions
+│   └── public/                # Static assets (logos, icons)
+├── deploy.sh                  # Automated deployment script
+└── DEPLOYMENT.md              # Deployment guide
 ```
 
-## Features
+## 🚀 Quick Start
 
-- ✅ **Model Upload**: Upload AI model files to Walrus decentralized storage
-- ✅ **Metadata Management**: Record model information (name, description, tags, etc.) on Sui blockchain
-- ✅ **Model Browsing**: View all uploaded models and their details
-- ✅ **Wallet Integration**: Support Sui wallet connection with persistence
-- ✅ **Real-time Updates**: Automatic model list refresh after upload
-- ✅ **User-friendly Notifications**: Toast notifications instead of native alerts
+### Prerequisites
 
-## Quick Start
+- Node.js 20+ and npm
+- Sui CLI installed and configured
+- Sui wallet with testnet SUI tokens
+- OpenAI-compatible API access (for metadata generation)
 
-### 1. Install Walrus
+### 1. Install Walrus CLI
 
 ```bash
 curl -sSf https://install.wal.app | sh -s -- -n testnet
@@ -47,26 +87,34 @@ curl -sSf https://install.wal.app | sh -s -- -n testnet
 
 ### 2. Deploy Smart Contract
 
+Using the automated deployment script:
+
+```bash
+./deploy.sh
+```
+
+Or manually:
+
 ```bash
 cd walrus_model_hub
 sui client publish --gas-budget 100000000
 ```
 
-Note the Package ID and Registry Object ID after deployment.
+The script will automatically update `web/lib/contracts.ts` with the new contract addresses.
 
-### 3. Configure Frontend
+### 3. Configure Environment Variables
 
-Update contract configuration in `web/lib/config.ts`:
+Create a `.env.local` file in the `web/` directory:
 
-```typescript
-export const CONTRACT_CONFIG = {
-  packageId: "YOUR_PACKAGE_ID",
-  registryId: "YOUR_REGISTRY_ID",
-  network: "testnet"
-};
+```bash
+# AI Metadata Generation (GLM-4.5-Flash via OpenAI SDK)
+OPENAI_API_KEY=your_api_key_here
+OPENAI_BASE_URL=https://open.bigmodel.cn/api/paas/v4/
 ```
 
-### 4. Start Frontend Application
+> **Note**: The project uses GLM-4.5-Flash through the OpenAI-compatible API. You can obtain an API key from [Zhipu AI](https://open.bigmodel.cn/).
+
+### 4. Start the Application
 
 ```bash
 cd web
@@ -74,39 +122,59 @@ npm install
 npm run dev
 ```
 
-Visit [http://localhost:3000](http://localhost:3000) to view the application.
+Visit [http://localhost:3000](http://localhost:3000) to access the application.
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 ### Smart Contracts
-- **Sui Move**: Smart contract development language
-- **Sui Framework**: Sui blockchain framework
+- **Sui Move**: Type-safe smart contract language
+- **Sui Framework**: Core blockchain primitives and utilities
 
 ### Frontend
-- **Next.js 16**: React framework
-- **TypeScript**: Type safety
-- **Tailwind CSS**: Styling framework
-- **@mysten/dapp-kit**: Sui wallet integration
-- **@mysten/sui**: Sui SDK
-- **React Query**: Data fetching and caching
-- **React Hot Toast**: Notification component
+- **Next.js 16**: React framework with App Router
+- **React 19**: Latest React features
+- **TypeScript**: Full type safety
+- **Tailwind CSS 4**: Utility-first styling
 
-## Development Guide
+### Blockchain Integration
+- **@mysten/dapp-kit**: Sui wallet connection and hooks
+- **@mysten/sui**: Sui SDK for transactions and queries
+- **@tanstack/react-query**: Efficient data fetching and caching
+
+### AI & UX
+- **OpenAI SDK**: LLM integration for metadata generation
+- **canvas-confetti**: Celebration animations
+- **react-hot-toast**: Toast notifications
+
+## 📚 Development Guide
 
 ### Smart Contract Development
 
 ```bash
 cd walrus_model_hub
 
-# Build contract
+# Build the contract
 sui move build
 
 # Run tests
 sui move test
 
-# Publish contract
+# Publish to testnet
 sui client publish --gas-budget 100000000
+
+# Publish to devnet
+sui client publish --gas-budget 100000000 --network devnet
 ```
+
+#### Contract Structure
+
+The `model_hub.move` contract provides:
+
+- **Registry Object**: Shared object storing all model metadata
+- **Model Struct**: Stores name, description, blob_id, uploader, tags
+- **Events**:
+  - `ModelRegistered`: Emitted when a new model is uploaded
+  - `ModelDownloaded`: Emitted when a model is downloaded
 
 ### Frontend Development
 
@@ -116,24 +184,54 @@ cd web
 # Install dependencies
 npm install
 
-# Development mode
+# Development mode with hot reload
 npm run dev
 
-# Build for production
+# Type checking
+npx tsc --noEmit
+
+# Linting
+npm run lint
+
+# Production build
 npm run build
 
 # Start production server
 npm start
-
-# Lint code
-npm run lint
 ```
 
-## Configuration
+#### Key Pages & Components
 
-### Walrus Configuration
+- **`app/page.tsx`**: Home page with searchable model gallery, pagination, download tracking
+- **`app/upload/page.tsx`**: Upload page with AI metadata generation and confetti on success
+- **`app/model/[blobId]/page.tsx`**: Model detail page with download button and explorer links
+- **`app/api/generate-metadata/route.ts`**: Streaming API for AI-powered metadata generation
 
-Configure Walrus Publisher and Aggregator endpoints in the frontend application:
+### API Endpoints
+
+#### POST `/api/generate-metadata`
+
+Generates model description and tags using AI.
+
+**Request Body:**
+```json
+{
+  "fileName": "llama-2-7b.gguf"
+}
+```
+
+**Response:** Server-Sent Events (SSE) stream
+```
+data: {"description":"Partial description...","tags":["tag1"]}
+data: {"description":"Complete description","tags":["tag1","tag2","tag3"]}
+data: [DONE]
+```
+
+## ⚙️ Configuration
+
+### Walrus Endpoints
+
+The application uses the following Walrus testnet endpoints (configured in `web/lib/walrus.ts`):
 
 ```typescript
 const WALRUS_CONFIG = {
@@ -142,53 +240,141 @@ const WALRUS_CONFIG = {
 };
 ```
 
-### Sui Network Configuration
+### Network Configuration
 
-Default uses Sui Testnet, can be modified in configuration files:
+Update the Sui network in wallet connection (`web/app/providers.tsx`):
 
 ```typescript
-const SUI_NETWORK = "testnet"; // or "mainnet", "devnet"
+const networks = {
+  testnet: { url: getFullnodeUrl('testnet') },
+  mainnet: { url: getFullnodeUrl('mainnet') },
+  devnet: { url: getFullnodeUrl('devnet') }
+};
 ```
 
-## Troubleshooting
+## 🔧 Troubleshooting
 
-### 1. Model Upload Failure
+### Model Upload Fails
 
-- Check if Walrus endpoints are available
-- Verify file size doesn't exceed limits
-- Ensure wallet has sufficient SUI tokens
+**Symptoms**: Upload button shows error or transaction fails
 
-### 2. Model List Not Updating
+**Solutions**:
+- Verify Walrus endpoints are accessible
+- Check file size is under blob storage limits
+- Ensure wallet has sufficient SUI for gas fees
+- Confirm model with same blob_id doesn't already exist
 
-- Application has implemented automatic polling mechanism
-- List will auto-refresh after successful upload
+### Metadata Generation Not Working
 
-### 3. Wallet Connection Lost
+**Symptoms**: "Generate with AI" button doesn't produce results
 
-- Application has implemented wallet persistence
-- Will auto-reconnect after page refresh
+**Solutions**:
+- Verify `OPENAI_API_KEY` is set in `.env.local`
+- Check `OPENAI_BASE_URL` points to GLM API endpoint
+- Ensure API key has sufficient quota
+- Check browser console for API errors
 
-## Contributing
+### Download Count Not Updating
 
-Issues and Pull Requests are welcome!
+**Symptoms**: Download statistics remain at 0
 
-1. Fork this repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+**Solutions**:
+- Download tracking requires a wallet connection
+- Each download records an on-chain transaction
+- Wait a few seconds for blockchain confirmation
+- Check that `record_download` transaction succeeded
 
-## License
+### Wallet Disconnects on Refresh
 
-This project is licensed under the MIT License.
+**Symptoms**: Wallet connection lost after page reload
 
-## Related Links
+**Solutions**:
+- Enable "auto-connect" in your Sui wallet settings
+- The app implements wallet persistence via dapp-kit
+- Clear browser cache if persistence fails
 
-- [Walrus Official Site](https://walrus.site)
-- [Sui Official Site](https://sui.io)
+## 🎯 Usage Guide
+
+### Uploading a Model
+
+1. **Connect Wallet**: Click "Connect Wallet" and approve the connection
+2. **Navigate to Upload**: Click "Upload Model" or go to `/upload`
+3. **Fill Basic Info**: Enter model name
+4. **Select File**: Choose your model file (any format supported)
+5. **Generate Metadata** (Optional): Click "Generate with AI" for auto-description and tags
+6. **Customize**: Edit AI-generated content or add your own
+7. **Upload**: Click "Upload to Walrus" and approve transactions
+8. **Celebrate**: Enjoy the confetti! 🎉
+
+### Browsing Models
+
+- **Search**: Use the search bar to filter by model name
+- **Pagination**: Navigate through pages of models
+- **View Details**: Click any model card to see full information
+- **Download**: Click "Download Model Weights" to get the file
+- **Explore**: Click blob ID or uploader address to view on explorers
+
+## 🤝 Contributing
+
+We welcome contributions! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Make your changes and test thoroughly
+4. Commit with clear messages: `git commit -m 'Add amazing feature'`
+5. Push to your fork: `git push origin feature/amazing-feature`
+6. Open a Pull Request with a detailed description
+
+### Development Guidelines
+
+- Follow TypeScript best practices
+- Maintain consistent code style (use ESLint)
+- Add tests for smart contract changes
+- Update documentation for new features
+- Test on testnet before submitting PR
+
+## 📄 License
+
+This project is licensed under the MIT License. See [LICENSE](./LICENSE) for details.
+
+## 🔗 Related Resources
+
+- [Walrus Documentation](https://docs.walrus.site)
 - [Sui Documentation](https://docs.sui.io)
+- [Walruscan Explorer (Testnet)](https://testnet.walruscan.com)
+- [Suiscan Explorer (Testnet)](https://testnet.suiscan.xyz)
 - [Next.js Documentation](https://nextjs.org/docs)
+- [Sui dApp Kit](https://sdk.mystenlabs.com/dapp-kit)
 
-## Contact
+## 🚀 Roadmap
 
-For questions or suggestions, please contact us through Issues.
+We have exciting features planned for future releases:
+
+### 1. Walrus Site Deployment
+- Deploy the application as a decentralized website on [Walrus Sites](https://docs.walrus.site/walrus-sites/intro.html)
+- Enable fully decentralized hosting with censorship resistance
+- Integration with [SuiNS](https://suins.io/) for human-readable domain names
+
+### 2. User Profile Center
+- Personal dashboard for uploaded models
+- User statistics and activity tracking
+- Model management interface
+- Download history and analytics
+
+### 3. Hugging Face Integration
+- Import models directly from [Hugging Face](https://huggingface.co/)
+- Sync model metadata and tags
+- One-click deployment from Hugging Face to Walrus
+- Cross-platform model discovery
+
+Stay tuned for updates! Contributions and suggestions are welcome.
+
+## 📧 Support
+
+- **Issues**: Report bugs or request features via [GitHub Issues](../../issues)
+- **Discussions**: Join conversations in [GitHub Discussions](../../discussions)
+- **Documentation**: Check [DEPLOYMENT.md](./DEPLOYMENT.md) for deployment details
+
+---
+
+Built with ❤️ using Walrus, Sui, and Next.js
