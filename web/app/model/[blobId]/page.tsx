@@ -154,9 +154,17 @@ export default function ModelDetailPage() {
                     <div>
                         <label className="block text-sm font-medium text-gray-600 mb-2">Blob ID</label>
                         <div className="flex items-center gap-2">
-                            <code className="flex-1 bg-gray-50 px-4 py-3 rounded-lg text-sm font-mono text-gray-800 border border-gray-200 break-all">
-                                {model.blobId}
-                            </code>
+                            <a
+                                href={`https://walruscan.com/${process.env.NEXT_PUBLIC_NETWORK || 'testnet'}/blob/${model.blobId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex-1 bg-gray-50 px-4 py-3 rounded-lg text-sm font-mono text-blue-600 hover:text-blue-700 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 break-all transition-all group flex items-center gap-2"
+                            >
+                                <span className="flex-1">{model.blobId}</span>
+                                <svg className="w-4 h-4 flex-shrink-0 opacity-60 group-hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                            </a>
                             <button
                                 onClick={() => copyToClipboard(model.blobId, 'blobId')}
                                 className="px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0"
@@ -179,9 +187,17 @@ export default function ModelDetailPage() {
                     <div>
                         <label className="block text-sm font-medium text-gray-600 mb-2">Uploader Address</label>
                         <div className="flex items-center gap-2">
-                            <code className="flex-1 bg-gray-50 px-4 py-3 rounded-lg text-sm font-mono text-gray-800 border border-gray-200 break-all">
-                                {model.uploader}
-                            </code>
+                            <a
+                                href={`https://suiscan.xyz/${process.env.NEXT_PUBLIC_NETWORK || 'testnet'}/account/${model.uploader}/activity`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex-1 bg-gray-50 px-4 py-3 rounded-lg text-sm font-mono text-blue-600 hover:text-blue-700 hover:bg-blue-50 border border-gray-200 hover:border-blue-300 break-all transition-all group flex items-center gap-2"
+                            >
+                                <span className="flex-1">{model.uploader}</span>
+                                <svg className="w-4 h-4 flex-shrink-0 opacity-60 group-hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                            </a>
                             <button
                                 onClick={() => copyToClipboard(model.uploader, 'uploader')}
                                 className="px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0"

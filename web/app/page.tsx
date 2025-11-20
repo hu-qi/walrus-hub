@@ -255,28 +255,30 @@ export default function Home() {
                     </div>
 
                     {/* Description */}
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-2 leading-relaxed min-h-[2.5rem]">
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-2 leading-relaxed h-10">
                       {model.description}
                     </p>
 
                     {/* Tags with overflow handling */}
-                    {model.tags && model.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mb-4">
-                        {model.tags.slice(0, 3).map((tag) => (
-                          <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-md max-w-[120px]">
-                            <svg className="w-3 h-3 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                            </svg>
-                            <span className="truncate">{tag}</span>
-                          </span>
-                        ))}
-                        {model.tags.length > 3 && (
-                          <span className="inline-flex items-center px-2.5 py-1 bg-gray-50 text-gray-500 text-xs font-medium rounded-md">
-                            +{model.tags.length - 3} more
-                          </span>
-                        )}
-                      </div>
-                    )}
+                    <div className="h-[72px] mb-4">
+                      {model.tags && model.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {model.tags.slice(0, 3).map((tag) => (
+                            <span key={tag} className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-md max-w-[120px]">
+                              <svg className="w-3 h-3 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                              </svg>
+                              <span className="truncate">{tag}</span>
+                            </span>
+                          ))}
+                          {model.tags.length > 3 && (
+                            <span className="inline-flex items-center px-2.5 py-1 bg-gray-50 text-gray-500 text-xs font-medium rounded-md">
+                              +{model.tags.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
 
                     {/* Metadata Footer */}
                     <div className="flex items-center gap-4 text-xs text-gray-500 mb-4 pb-4 border-b border-gray-100">
