@@ -111,9 +111,29 @@ export default function ModelDetailPage() {
 
             {/* Model Header */}
             <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-8 mb-8 border border-blue-100">
-                <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    {model.name}
-                </h1>
+                <div className="flex items-start justify-between gap-4 mb-4">
+                    <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex-1">
+                        {model.name}
+                    </h1>
+
+                    {/* Share to X Button */}
+                    <button
+                        onClick={() => {
+                            const shareText = `🤖 Check out "${model.name}" on Walrus Model Hub!\n\n${model.description}\n\n📊 ${downloadCount} downloads\n\n@SuiNetwork @SuiNSdapp @SuiNetworkCN @WalrusProtocol\n\n#AI #MachineLearning #Web3`;
+                            const shareUrl = window.location.href;
+                            const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+                            window.open(twitterUrl, '_blank', 'noopener,noreferrer');
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 bg-black hover:bg-gray-800 text-white rounded-lg transition-all shadow-sm hover:shadow-md group flex-shrink-0"
+                        title="Share on X"
+                    >
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                        </svg>
+                        <span className="text-sm font-medium">Share</span>
+                    </button>
+                </div>
+
                 {model.tags && model.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-4">
                         {model.tags.map((tag) => (
