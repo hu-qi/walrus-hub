@@ -1,173 +1,78 @@
-# 合约部署指南
+# Walrus Model Hub - Deployment Guide
 
-## 使用自动化部署脚本
+[中文版本](./DEPLOYMENT.zh.md)
 
-我们提供了一个自动化脚本 `deploy.sh` 来简化合约部署和配置更新流程。
+## 🎉 部署成功
 
-### 基本用法
+您的 Walrus Model Hub 已成功部署到 Walrus Sites Mainnet！
 
-**默认模式**（推荐）- 部署合约并自动重启前端：
-```bash
-./deploy.sh
-```
+### 站点信息
+- **Site Object ID**: `0x9eb048881748acad77c1e61485e0cc202e0ab7baac4427c86a2bd1dbebf9706f`
+- **Base36 ID**: `3ydv4lw2dz9hlqsywlaj80zyu96p7ywhe4ncipfauv698hhn5b`
+- **SuiNS 域名**: `walrus-hub.sui`
+- **SuiNS Object ID**: `0xff1a0f215cc769cfdead0ff6f99a8572014b43a1e7b74b9bab175bde435944e6`
 
-### 高级选项
+## 🌐 配置 SuiNS 域名访问
 
-脚本支持多种部署模式，每个选项都有简短形式：
+### 步骤 1: 访问 SuiNS 管理页面
+前往：https://suins.io/account/my-names
 
-```bash
-# 查看帮助信息
-./deploy.sh --help    # 或 -h
-
-# 只部署合约（不重启前端）
-./deploy.sh --contract-only    # 或 -c
-
-# 只重启前端服务器（不部署合约）
-./deploy.sh --frontend-only    # 或 -f
-
-# 部署合约但跳过前端重启
-./deploy.sh --skip-frontend    # 或 -s
-```
-
-### 使用场景
-
-**场景 1：首次部署或更新合约**
-```bash
-./deploy.sh
-```
-✅ 自动完成：构建合约 → 部署 → 更新配置 → 重启前端
-
-**场景 2：只修改了前端代码**
-```bash
-./deploy.sh -f    # 快捷方式
-```
-✅ 快速重启 Next.js 服务器
-
-**场景 3：需要手动重启前端**
-```bash
-./deploy.sh -c    # 快捷方式
-# 然后手动处理前端
-```
-
-### 脚本功能
-
-这个脚本会自动完成以下操作：
-
-1. ✅ **构建合约** - 编译 Move 智能合约
-2. ✅ **部署合约** - 将合约发布到 Sui 区块链
-3. ✅ **提取地址** - 自动获取 `PACKAGE_ID` 和 `REGISTRY_ID`
-4. ✅ **更新配置** - 自动更新 `web/lib/contracts.ts`
-5. ✅ **备份原配置** - 保存旧配置到 `.backup` 文件
-6. ✅ **重启前端** - 自动停止旧服务器并启动新实例（默认启用）
-
-### 前置条件
-
-- 已安装 Sui CLI
-- 已配置 Sui 钱包
-- 钱包中有足够的 SUI 代币支付 gas 费
-
-### 脚本输出示例
-
-```
-📦 Walrus Model Hub - Contract Deployment Script
-================================================
-
-🔨 Building contract...
-✅ Contract built successfully
-
-🚀 Deploying contract to Sui blockchain...
-⚠️  This will require gas fees. Please approve the transaction in your wallet.
-
-✅ Contract deployed successfully
-
-📝 Extracting contract addresses...
-✅ PACKAGE_ID: 0x...
-✅ REGISTRY_ID: 0x...
-
-🔧 Updating frontend configuration...
-✅ Configuration updated in web/lib/contracts.ts
-📄 Backup saved as web/lib/contracts.ts.backup
-
-================================================
-✨ Deployment Complete!
-================================================
-
-Contract Addresses:
-  PACKAGE_ID:  0x...
-  REGISTRY_ID: 0x...
-
-Configuration file updated: web/lib/contracts.ts
-
-📌 Next Steps:
-  1. Restart your Next.js development server (Ctrl+C and npm run dev)
-  2. Test the download tracking feature
-  3. Verify download counts update correctly
-
-💡 Tip: The old contract addresses are backed up in web/lib/contracts.ts.backup
-```
-
-### 部署后步骤
-
-1. **重启开发服务器**
-   ```bash
-   cd web
-   npm run dev
+### 步骤 2: 链接到 Walrus Site
+1. 找到您的域名 `walrus-hub.sui`
+2. 点击右上角的 **三点菜单图标**
+3. 选择 **"Link To Walrus Site"**
+4. 粘贴 Site Object ID: 
    ```
+   0x9eb048881748acad77c1e61485e0cc202e0ab7baac4427c86a2bd1dbebf9706f
+   ```
+5. 确认信息正确后，点击 **"Apply"**
+6. 批准钱包中的交易
 
-2. **测试下载跟踪**
-   - 连接钱包
-   - 点击模型的下载按钮
-   - 批准交易
-   - 验证下载计数增加
+### 步骤 3: 访问您的网站
+配置完成后，您可以通过以下地址访问：
 
-### 故障排除
+**🔗 推荐访问地址（SuiNS）**:
+```
+https://walrus-hub.wal.app
+```
 
-**问题：脚本提示 "sui CLI is not installed"**
-- 解决：安装 Sui CLI: https://docs.sui.io/guides/developer/getting-started/sui-install
+**备用访问地址（Base36）**:
+```
+https://3ydv4lw2dz9hlqsywlaj80zyu96p7ywhe4ncipfauv698hhn5b.walrus.site
+```
 
-**问题：部署失败，gas 不足**
-- 解决：从测试网水龙头获取更多 SUI: https://discord.com/invite/sui
+## 🔄 更新网站
 
-**问题：无法提取 REGISTRY_ID**
-- 解决：手动从部署输出中查找 Registry 对象的 ObjectId
-- 手动更新 `web/lib/contracts.ts` 中的 `REGISTRY_ID`
+当需要更新网站内容时：
 
-**问题：需要恢复旧配置**
-- 解决：从备份文件恢复
-  ```bash
-  cp web/lib/contracts.ts.backup web/lib/contracts.ts
-  ```
-
-## 手动部署（如果脚本不工作）
-
-### 1. 构建合约
 ```bash
-cd walrus_model_hub
-sui move build
+cd web
+npm run deploy:mainnet
 ```
 
-### 2. 部署合约
-```bash
-sui client publish --gas-budget 100000000
-```
+这将自动更新现有站点，无需重新配置 SuiNS。
 
-### 3. 提取地址
+## 💰 费用信息
 
-从部署输出中找到：
-- `PACKAGE_ID`: `Published Objects` 部分的包 ID
-- `REGISTRY_ID`: `Created Objects` 中类型为 `Registry` 的对象 ID
+- **首次部署 Gas 费**: ~0.26 SUI
+- **首次部署存储费**: ~0.002 WAL (1 epoch)
+- **更新网站**: 仅需支付 Gas 费，存储费取决于新增内容
 
-### 4. 更新配置
+## 📊 网络配置
 
-编辑 `web/lib/contracts.ts`:
-```typescript
-export const PACKAGE_ID = "0xYOUR_PACKAGE_ID";
-export const REGISTRY_ID = "0xYOUR_REGISTRY_ID";
-export const MODULE_NAME = "model_hub";
-```
+### Mainnet
+- **Package ID**: `0x26eb7ee8688da02c5f671679524e379f0b837a12f1d1d799f255b7eea260ad27`
+- **RPC URL**: `https://fullnode.mainnet.sui.io:443`
+- **部署命令**: `npm run deploy:mainnet`
 
-### 5. 重启服务器
-```bash
-cd ../web
-npm run dev
-```
+### Testnet
+- **Package ID**: `0xf99aee9f21493e1590e7e5a9aea6f343a1f381031a04a732724871fc294be799`
+- **RPC URL**: `https://fullnode.testnet.sui.io:443`
+- **部署命令**: `npm run deploy:testnet`
+
+## 🔗 相关链接
+
+- **Walrus 官方文档**: https://docs.wal.app
+- **SuiNS 管理**: https://suins.io/account/my-names
+- **Sui Explorer**: https://suiscan.xyz/mainnet/object/0x9eb048881748acad77c1e61485e0cc202e0ab7baac4427c86a2bd1dbebf9706f
+- **绑定自定义域名**: https://docs.wal.app/walrus-sites/bring-your-own-domain.html

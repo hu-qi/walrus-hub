@@ -55,20 +55,30 @@ walrus/
 ├── web/                       # Next.js frontend application
 │   ├── app/
 │   │   ├── page.tsx           # Home page with model listing
-│   │   ├── upload/            # Model upload page
-│   │   ├── model/[blobId]/    # Model detail page
-│   │   └── api/
-│   │       └── generate-metadata/  # AI metadata generation endpoint
+│   │   ├── upload/            # Model upload page with AI generation
+│   │   └── model/             # Model detail page (query param routing)
 │   ├── components/            # Reusable React components
 │   ├── lib/
 │   │   ├── contracts.ts       # Contract addresses (auto-generated)
 │   │   ├── walrus.ts          # Walrus storage integration
 │   │   ├── types.ts           # TypeScript type definitions
 │   │   └── utils.ts           # Utility functions
-│   └── public/                # Static assets (logos, icons)
-├── deploy.sh                  # Automated deployment script
-└── DEPLOYMENT.md              # Deployment guide
+│   ├── public/
+│   │   └── ws-resources.json  # Walrus Sites routing config
+│   ├── sites-config.yaml      # Walrus Sites testnet config
+│   ├── sites-config-mainnet.yaml  # Walrus Sites mainnet config
+│   └── package.json           # NPM scripts including deploy commands
+├── deploy.sh                  # Smart contract deployment script
+└── DEPLOYMENT.md              # Walrus Sites deployment guide
 ```
+
+## 🌐 Live Site
+
+**Deployed on Walrus Sites (Mainnet)**:
+- 🔗 **Primary URL**: https://walrus-hub.wal.app
+- 🔗 **Alternative URL**: https://3ydv4lw2dz9hlqsywlaj80zyu96p7ywhe4ncipfauv698hhn5b.walrus.site
+- 📦 **SuiNS Name**: `walrus-hub.sui`
+- 🆔 **Site Object ID**: `0x9eb048881748acad77c1e61485e0cc202e0ab7baac4427c86a2bd1dbebf9706f`
 
 ## 🚀 Quick Start
 
@@ -76,13 +86,19 @@ walrus/
 
 - Node.js 20+ and npm
 - Sui CLI installed and configured
-- Sui wallet with testnet SUI tokens
-- OpenAI-compatible API access (for metadata generation)
+- Sui wallet with SUI and WAL tokens
+- Walrus CLI (for deployment)
 
 ### 1. Install Walrus CLI
 
+**Testnet:**
 ```bash
 curl -sSf https://install.wal.app | sh -s -- -n testnet
+```
+
+**Mainnet:**
+```bash
+curl -sSf https://install.wal.app | sh
 ```
 
 ### 2. Deploy Smart Contract
@@ -102,19 +118,7 @@ sui client publish --gas-budget 100000000
 
 The script will automatically update `web/lib/contracts.ts` with the new contract addresses.
 
-### 3. Configure Environment Variables
-
-Create a `.env.local` file in the `web/` directory:
-
-```bash
-# AI Metadata Generation (GLM-4.5-Flash via OpenAI SDK)
-OPENAI_API_KEY=your_api_key_here
-OPENAI_BASE_URL=https://open.bigmodel.cn/api/paas/v4/
-```
-
-> **Note**: The project uses GLM-4.5-Flash through the OpenAI-compatible API. You can obtain an API key from [Zhipu AI](https://open.bigmodel.cn/).
-
-### 4. Start the Application
+### 3. Local Development
 
 ```bash
 cd web
@@ -123,6 +127,22 @@ npm run dev
 ```
 
 Visit [http://localhost:3000](http://localhost:3000) to access the application.
+
+### 4. Deploy to Walrus Sites
+
+**Deploy to Mainnet:**
+```bash
+cd web
+npm run deploy:mainnet
+```
+
+**Deploy to Testnet:**
+```bash
+cd web
+npm run deploy:testnet
+```
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions and SuiNS configuration.
 
 ## 🛠️ Tech Stack
 
@@ -203,29 +223,19 @@ npm start
 #### Key Pages & Components
 
 - **`app/page.tsx`**: Home page with searchable model gallery, pagination, download tracking
-- **`app/upload/page.tsx`**: Upload page with AI metadata generation and confetti on success
-- **`app/model/[blobId]/page.tsx`**: Model detail page with download button and explorer links
-- **`app/api/generate-metadata/route.ts`**: Streaming API for AI-powered metadata generation
+- **`app/upload/page.tsx`**: Upload page with client-side AI metadata generation and confetti on success
+- **`app/model/page.tsx`**: Model detail page with query parameter routing, download button and explorer links
 
-### API Endpoints
+### AI Metadata Generation
 
-#### POST `/api/generate-metadata`
+The AI metadata generation feature runs **client-side** using OpenAI-compatible APIs. Users can:
 
-Generates model description and tags using AI.
+- Configure their own API keys via the settings panel
+- Use default system configuration (GLM-4.5-Flash)
+- Generate descriptions and tags with real-time streaming
+- See typing effects as content is generated
 
-**Request Body:**
-```json
-{
-  "fileName": "llama-2-7b.gguf"
-}
-```
-
-**Response:** Server-Sent Events (SSE) stream
-```
-data: {"description":"Partial description...","tags":["tag1"]}
-data: {"description":"Complete description","tags":["tag1","tag2","tag3"]}
-data: [DONE]
-```
+This design ensures the feature works on static hosting platforms like Walrus Sites.
 
 ## ⚙️ Configuration
 
@@ -348,32 +358,48 @@ This project is licensed under the MIT License. See [LICENSE](./LICENSE) for det
 
 ## 🚀 Roadmap
 
-We have exciting features planned for future releases:
+### ✅ Completed Features
 
-### 1. Walrus Site Deployment
-- Deploy the application as a decentralized website on [Walrus Sites](https://docs.walrus.site/walrus-sites/intro.html)
-- Enable fully decentralized hosting with censorship resistance
-- Integration with [SuiNS](https://suins.io/) for human-readable domain names
+- ✨ **Walrus Sites Deployment** - Fully decentralized hosting on Walrus with SuiNS integration
+- 🤖 **AI-Powered Metadata Generation** - Client-side GLM-4.5-Flash integration with streaming
+- ⛓️ **Blockchain Download Tracking** - Real-time statistics via Sui events
+- 🎨 **Interactive UX** - Confetti animations, toast notifications, wallet persistence
 
-### 2. User Profile Center
+### 🔮 Upcoming Features
+
+#### 1. User Profile Center
 - Personal dashboard for uploaded models
 - User statistics and activity tracking
 - Model management interface
 - Download history and analytics
 
-### 3. Hugging Face Integration
+#### 2. Hugging Face Integration
 - Import models directly from [Hugging Face](https://huggingface.co/)
 - Sync model metadata and tags
 - One-click deployment from Hugging Face to Walrus
 - Cross-platform model discovery
 
-Stay tuned for updates! Contributions and suggestions are welcome.
+#### 3. Custom Domain Support
+- Bring-your-own-domain functionality
+- SSL certificate management
+- DNS configuration guides
+
+Contributions and suggestions are always welcome!
 
 ## 📧 Support
 
 - **Issues**: Report bugs or request features via [GitHub Issues](../../issues)
 - **Discussions**: Join conversations in [GitHub Discussions](../../discussions)
 - **Documentation**: Check [DEPLOYMENT.md](./DEPLOYMENT.md) for deployment details
+
+## 🙏 Acknowledgments
+
+We would like to express our gratitude to the following individuals and communities for their support and contributions:
+
+- **[Google Antigravity](https://antigravity.google/)、[Kiro](https://kiro.dev/)** - Advanced AI coding assistant that powered the development of this project
+- **[SUI Chinese Community](https://x.com/SuiNetworkCN)** - For community support and ecosystem promotion
+- **[HOH Water Molecule Community](https://x.com/0xHOH)** - For technical guidance and community engagement
+- **[uvd](https://x.com/wangtxxl)** - For valuable insights and feedback
 
 ---
 

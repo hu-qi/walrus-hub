@@ -1,0 +1,14 @@
+# Walrus Sites Configuration (Testnet)
+# This file is used by site-builder-testnet
+
+# The Sui object ID of the Walrus Sites package on Testnet
+package: 0x152f438c69090d39d441553a99608b00335523f41e6573135307c242366922a2
+
+# Sui RPC URL for Testnet
+rpc_url: https://fullnode.testnet.sui.io:443
+
+# Path to your Walrus binary (optional if in PATH)
+# walrus_binary: walrus
+
+# Path to your Walrus client configuration (optional)
+# walrus_config: ~/.walrus/client_config.yaml

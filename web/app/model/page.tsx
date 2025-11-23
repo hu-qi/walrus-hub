@@ -1,20 +1,24 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useSuiClientQuery, useCurrentAccount, ConnectButton } from "@mysten/dapp-kit";
 import { PACKAGE_ID, MODULE_NAME } from "@/lib/contracts";
 import { downloadBlob } from "@/lib/walrus";
 import { Model } from "@/lib/types";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import confetti from "canvas-confetti";
 import { useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
 
-export default function ModelDetailPage() {
-    const params = useParams();
-    const blobId = params.blobId as string;
+
+
+function ModelDetailContent() {
+    const searchParams = useSearchParams();
+    const blobId = searchParams.get("id");
     const account = useCurrentAccount();
     const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
     const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -308,5 +312,20 @@ export default function ModelDetailPage() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function ModelDetailPage() {
+    return (
+        <Suspense fallback={
+            <div className="max-w-4xl mx-auto py-12 px-6">
+                <div className="animate-pulse">
+                    <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+                    <div className="h-64 bg-gray-200 rounded"></div>
+                </div>
+            </div>
+        }>
+            <ModelDetailContent />
+        </Suspense>
     );
 }

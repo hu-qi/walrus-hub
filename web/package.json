@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "next lint",
+    "deploy:testnet": "npm run build && site-builder-testnet deploy ./out --epochs 1",
+    "deploy:mainnet": "npm run build && site-builder --config ./sites-config-mainnet.yaml --walrus-config ~/.config/walrus/client_config_mainnet.yaml deploy ./out --epochs 1",
+    "deploy": "npm run deploy:testnet"
   },
   "dependencies": {
     "@mysten/dapp-kit": "^0.19.9",
