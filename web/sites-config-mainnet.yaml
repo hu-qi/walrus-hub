@@ -1,0 +1,14 @@
+# Walrus Sites Configuration (Mainnet)
+# This file is used by site-builder (mainnet)
+
+# The Sui object ID of the Walrus Sites package on Mainnet
+package: 0x26eb7ee8688da02c5f671679524e379f0b837a12f1d1d799f255b7eea260ad27
+
+# Sui RPC URL for Mainnet
+rpc_url: https://fullnode.mainnet.sui.io:443
+
+# Path to your Walrus binary (optional if in PATH)
+# walrus_binary: walrus
+
+# Path to your Walrus client configuration (optional)
+walrus_config: ~/.config/walrus/client_config_mainnet.yaml

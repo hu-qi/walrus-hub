@@ -30,6 +30,13 @@ export default function UploadPage() {
 
 
 
+    // Default LLM configuration
+    const DEFAULT_CONFIG = {
+        apiKey: "69be55d730b64d01ace31d0af07cfcb7.mzeIDXrIrFL8qpcN",
+        baseURL: "https://api.z.ai/api/paas/v4/",
+        model: "GLM-4.5-Flash",
+    };
+
     const handleGenerateMetadata = async () => {
         if (!name) {
             toast.error("Please enter a model name first", { position: "top-center" });
@@ -40,28 +47,43 @@ export default function UploadPage() {
         const toastId = toast.loading("Generating metadata with AI...", { position: "top-center" });
 
         try {
-            // Prepare LLM config if user provided any custom values
-            const llmConfig: any = {};
-            if (llmModel) llmConfig.model = llmModel;
-            if (llmApiKey) llmConfig.apiKey = llmApiKey;
-            if (llmBaseURL) llmConfig.baseURL = llmBaseURL;
+            // Client-side OpenAI call
+            // Use user provided config or fall back to system defaults
+            const baseURL = llmBaseURL || DEFAULT_CONFIG.baseURL;
+            const apiKey = llmApiKey || DEFAULT_CONFIG.apiKey;
+            const model = llmModel || DEFAULT_CONFIG.model;
 
-            const response = await fetch("/api/generate-metadata", {
+            const prompt = `
+You are an expert AI model librarian. 
+Generate a concise technical description (2-3 sentences) and a list of 5-8 relevant tags for an AI model named "${name}".
+Format the output exactly as follows:
+Description: [Your description here]
+Tags: [tag1, tag2, tag3]
+Do not include any other text or markdown formatting.
+`;
+
+            const response = await fetch(`${baseURL}/chat/completions`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${apiKey}`
+                },
                 body: JSON.stringify({
-                    modelName: name,
-                    ...(Object.keys(llmConfig).length > 0 && { llmConfig })
-                }),
+                    model: model,
+                    messages: [
+                        { role: "user", content: prompt }
+                    ],
+                    temperature: 0.7,
+                    stream: true // Enable streaming
+                })
             });
 
             if (!response.ok) {
-                throw new Error(await response.text());
+                const errorText = await response.text();
+                throw new Error(`API Error: ${response.status} - ${errorText}`);
             }
 
-            if (!response.body) {
-                throw new Error("No response body");
-            }
+            if (!response.body) throw new Error("No response body");
 
             // Clear existing fields
             setDescription("");
@@ -69,131 +91,60 @@ export default function UploadPage() {
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
-
-            // Stream buffers: what we've received vs what we've displayed
-            let streamBuffer = "";
+            let buffer = "";
             let displayedDescLength = 0;
             let displayedTagsLength = 0;
             let isStreamComplete = false;
-            let animationFrameId: number | null = null;
 
-            // Start the reading process
-            const readStream = async () => {
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) {
-                        isStreamComplete = true;
-                        break;
-                    }
-
-                    const chunk = decoder.decode(value, { stream: true });
-                    streamBuffer += chunk;
-                }
-            };
-
-            // Start typing animation with RAF for smooth updates
-            const startTypingAnimation = () => {
-                let lastTimestamp = performance.now();
-
-                const animate = (currentTimestamp: number) => {
-                    const deltaTime = currentTimestamp - lastTimestamp;
-
-                    // Dynamic speed: type faster if there's a backlog
-                    // Base speed: ~50 chars per second
-                    // Speed up to ~200 chars per second if there's a large backlog
-                    const parsedData = parseStreamBuffer(streamBuffer);
-                    const descBacklog = parsedData.description.length - displayedDescLength;
-                    const tagsBacklog = parsedData.tags.length - displayedTagsLength;
-                    const totalBacklog = descBacklog + tagsBacklog;
-
-                    // Calculate chars to type this frame based on backlog
-                    // More backlog = faster typing (to catch up)
-                    const baseCharsPerSecond = 50;
-                    const maxCharsPerSecond = 200;
-                    const backlogThreshold = 100; // Start speeding up after 100 chars backlog
-
-                    let charsPerSecond = baseCharsPerSecond;
-                    if (totalBacklog > backlogThreshold) {
-                        const speedMultiplier = Math.min(totalBacklog / backlogThreshold, 4);
-                        charsPerSecond = Math.min(baseCharsPerSecond * speedMultiplier, maxCharsPerSecond);
-                    }
-
-                    const charsToType = Math.ceil((charsPerSecond * deltaTime) / 1000);
-
-                    // Type description characters
-                    if (displayedDescLength < parsedData.description.length) {
-                        displayedDescLength = Math.min(
-                            displayedDescLength + charsToType,
-                            parsedData.description.length
-                        );
-                        setDescription(parsedData.description.slice(0, displayedDescLength));
-                    }
-
-                    // Type tags characters (only after description is complete)
-                    if (displayedDescLength >= parsedData.description.length &&
-                        displayedTagsLength < parsedData.tags.length) {
-                        displayedTagsLength = Math.min(
-                            displayedTagsLength + charsToType,
-                            parsedData.tags.length
-                        );
-                        setTags(parsedData.tags.slice(0, displayedTagsLength));
-                    }
-
-                    lastTimestamp = currentTimestamp;
-
-                    // Continue animation if there's more to type or stream is still running
-                    if (displayedDescLength < parsedData.description.length ||
-                        displayedTagsLength < parsedData.tags.length ||
-                        !isStreamComplete) {
-                        animationFrameId = requestAnimationFrame(animate);
-                    } else {
-                        // Animation complete
-                        animationFrameId = null;
-                    }
-                };
-
-                animationFrameId = requestAnimationFrame(animate);
-            };
-
-            // Helper to parse the stream buffer
-            const parseStreamBuffer = (buffer: string) => {
-                let description = "";
-                let tags = "";
-
-                const tagsIndex = buffer.indexOf("Tags:");
-                if (tagsIndex !== -1) {
-                    // Both sections present
-                    description = buffer.substring(0, tagsIndex).replace("Description:", "").trim();
-                    tags = buffer.substring(tagsIndex + 5).replace(/[\[\]]/g, "").trim();
-                } else {
-                    // Only description so far
-                    description = buffer.replace("Description:", "").trim();
+            // Simple streaming parser loop
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) {
+                    isStreamComplete = true;
+                    break;
                 }
 
-                return { description, tags };
-            };
+                const chunk = decoder.decode(value, { stream: true });
+                // OpenAI stream format is "data: JSON\n\n"
+                const lines = chunk.split('\n').filter(line => line.trim() !== '');
 
-            // Start both processes concurrently
-            startTypingAnimation();
-            await readStream();
+                for (const line of lines) {
+                    if (line.includes('[DONE]')) continue;
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const jsonStr = line.replace('data: ', '');
+                            const json = JSON.parse(jsonStr);
+                            const content = json.choices[0]?.delta?.content || '';
+                            if (content) {
+                                buffer += content;
 
-            // Wait for typing animation to complete
-            await new Promise<void>((resolve) => {
-                const checkComplete = () => {
-                    if (!animationFrameId && isStreamComplete) {
-                        resolve();
-                    } else {
-                        setTimeout(checkComplete, 100);
+                                // Parse buffer and update UI
+                                const tagsIndex = buffer.indexOf("Tags:");
+                                let currentDesc = "";
+                                let currentTags = "";
+
+                                if (tagsIndex !== -1) {
+                                    currentDesc = buffer.substring(0, tagsIndex).replace("Description:", "").trim();
+                                    currentTags = buffer.substring(tagsIndex + 5).replace(/[\[\]]/g, "").trim();
+                                } else {
+                                    currentDesc = buffer.replace("Description:", "").trim();
+                                }
+
+                                setDescription(currentDesc);
+                                if (currentTags) setTags(currentTags);
+                            }
+                        } catch (e) {
+                            console.warn("Error parsing stream chunk", e);
+                        }
                     }
-                };
-                checkComplete();
-            });
+                }
+            }
 
             toast.success("Metadata generated successfully!", { id: toastId });
 
         } catch (error: any) {
             console.error("Generation failed:", error);
-            toast.error("Failed to generate metadata", { id: toastId });
+            toast.error("Failed to generate metadata: " + error.message, { id: toastId });
         } finally {
             setIsGenerating(false);
         }
@@ -304,7 +255,7 @@ export default function UploadPage() {
                         {/* Modal Body */}
                         <div className="px-6 py-5 space-y-4">
                             <p className="text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
-                                💡 Leave fields blank to use system defaults
+                                💡 Leave fields blank to use system defaults (GLM-4.5-Flash)
                             </p>
 
                             <div>
@@ -341,7 +292,7 @@ export default function UploadPage() {
                                     type="text"
                                     value={llmModel}
                                     onChange={(e) => setLlmModel(e.target.value)}
-                                    placeholder="e.g. gpt-4, claude-3-5-sonnet-20241022"
+                                    placeholder="e.g. gpt-5.1, claude-sonnet-4-5-20250929"
                                     className="w-full px-4 py-2.5 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                                 />
                             </div>
@@ -369,6 +320,8 @@ export default function UploadPage() {
                     </div>
                 </div>
             )}
+
+            {/* Main Content */}
 
             {/* Main Content */}
             <div className="max-w-2xl mx-auto py-12 px-6">

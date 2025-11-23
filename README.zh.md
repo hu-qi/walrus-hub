@@ -55,20 +55,30 @@ walrus/
 ├── web/                       # Next.js 前端应用
 │   ├── app/
 │   │   ├── page.tsx           # 主页及模型列表
-│   │   ├── upload/            # 模型上传页面
-│   │   ├── model/[blobId]/    # 模型详情页面
-│   │   └── api/
-│   │       └── generate-metadata/  # AI 元数据生成端点
+│   │   ├── upload/            # 模型上传页面（含 AI 生成）
+│   │   └── model/             # 模型详情页面（查询参数路由）
 │   ├── components/            # 可复用 React 组件
 │   ├── lib/
 │   │   ├── contracts.ts       # 合约地址（自动生成）
 │   │   ├── walrus.ts          # Walrus 存储集成
 │   │   ├── types.ts           # TypeScript 类型定义
 │   │   └── utils.ts           # 工具函数
-│   └── public/                # 静态资源（logo、图标）
-├── deploy.sh                  # 自动化部署脚本
-└── DEPLOYMENT.md              # 部署指南
+│   ├── public/
+│   │   └── ws-resources.json  # Walrus Sites 路由配置
+│   ├── sites-config.yaml      # Walrus Sites 测试网配置
+│   ├── sites-config-mainnet.yaml  # Walrus Sites 主网配置
+│   └── package.json           # NPM 脚本（包括部署命令）
+├── deploy.sh                  # 智能合约部署脚本
+└── DEPLOYMENT.md              # Walrus Sites 部署指南
 ```
+
+## 🌐 在线访问
+
+**已部署至 Walrus Sites 主网**：
+- 🔗 **主要 URL**: https://walrus-hub.wal.app
+- 🔗 **备用 URL**: https://3ydv4lw2dz9hlqsywlaj80zyu96p7ywhe4ncipfauv698hhn5b.walrus.site
+- 📦 **SuiNS 域名**: `walrus-hub.sui`
+- 🆔 **Site Object ID**: `0x9eb048881748acad77c1e61485e0cc202e0ab7baac4427c86a2bd1dbebf9706f`
 
 ## 🚀 快速开始
 
@@ -76,13 +86,19 @@ walrus/
 
 - Node.js 20+ 和 npm
 - 已安装并配置 Sui CLI
-- 拥有测试网 SUI 代币的 Sui 钱包
-- OpenAI 兼容的 API 访问（用于元数据生成）
+- 拥有 SUI 和 WAL 代币的 Sui 钱包
+- Walrus CLI（用于部署）
 
 ### 1. 安装 Walrus CLI
 
+**测试网：**
 ```bash
 curl -sSf https://install.wal.app | sh -s -- -n testnet
+```
+
+**主网：**
+```bash
+curl -sSf https://install.wal.app | sh
 ```
 
 ### 2. 部署智能合约
@@ -102,19 +118,7 @@ sui client publish --gas-budget 100000000
 
 脚本会自动更新 `web/lib/contracts.ts` 中的新合约地址。
 
-### 3. 配置环境变量
-
-在 `web/` 目录下创建 `.env.local` 文件：
-
-```bash
-# AI 元数据生成（通过 OpenAI SDK 使用 GLM-4.5-Flash）
-OPENAI_API_KEY=your_api_key_here
-OPENAI_BASE_URL=https://open.bigmodel.cn/api/paas/v4/
-```
-
-> **注意**：本项目通过 OpenAI 兼容的 API 使用 GLM-4.5-Flash。您可以从[智谱 AI](https://open.bigmodel.cn/) 获取 API 密钥。
-
-### 4. 启动应用
+### 3. 本地开发
 
 ```bash
 cd web
@@ -123,6 +127,22 @@ npm run dev
 ```
 
 访问 [http://localhost:3000](http://localhost:3000) 以使用应用。
+
+### 4. 部署到 Walrus Sites
+
+**部署到主网：**
+```bash
+cd web
+npm run deploy:mainnet
+```
+
+**部署到测试网：**
+```bash
+cd web
+npm run deploy:testnet
+```
+
+详细的部署说明和 SuiNS 配置请查看 [DEPLOYMENT.md](./DEPLOYMENT.md)。
 
 ## 🛠️ 技术栈
 
@@ -203,29 +223,19 @@ npm start
 #### 关键页面与组件
 
 - **`app/page.tsx`**：主页，包含可搜索的模型画廊、分页、下载追踪
-- **`app/upload/page.tsx`**：上传页面，支持 AI 元数据生成和成功时的烟花动画
-- **`app/model/[blobId]/page.tsx`**：模型详情页面，包含下载按钮和浏览器链接
-- **`app/api/generate-metadata/route.ts`**：AI 驱动的元数据生成流式 API
+- **`app/upload/page.tsx`**：上传页面，支持客户端 AI 元数据生成和成功时的烟花动画
+- **`app/model/page.tsx`**：模型详情页面，采用查询参数路由，包含下载按钮和浏览器链接
 
-### API 端点
+### AI 元数据生成
 
-#### POST `/api/generate-metadata`
+AI 元数据生成功能在**客户端**运行，使用 OpenAI 兼容的 API。用户可以：
 
-使用 AI 生成模型描述和标签。
+- 通过设置面板配置自己的 API 密钥
+- 使用默认系统配置（GLM-4.5-Flash）
+- 以实时流式方式生成描述和标签
+- 观看内容生成的打字效果
 
-**请求体：**
-```json
-{
-  "fileName": "llama-2-7b.gguf"
-}
-```
-
-**响应：** 服务器发送事件（SSE）流
-```
-data: {"description":"部分描述...","tags":["tag1"]}
-data: {"description":"完整描述","tags":["tag1","tag2","tag3"]}
-data: [DONE]
-```
+这种设计确保功能可在 Walrus Sites 等静态托管平台上运行。
 
 ## ⚙️ 配置
 
@@ -348,32 +358,48 @@ const networks = {
 
 ## 🚀 路线图
 
-我们为未来版本规划了激动人心的功能：
+### ✅ 已完成功能
 
-### 1. Walrus Site 部署
-- 将应用部署为 [Walrus Sites](https://docs.walrus.site/walrus-sites/intro.html) 上的去中心化网站
-- 实现完全去中心化的托管，具备抗审查能力
-- 集成 [SuiNS](https://suins.io/) 实现人类可读的域名
+- ✨ **Walrus Sites 部署** - 在 Walrus 上完全去中心化托管，集成 SuiNS
+- 🤖 **AI 驱动的元数据生成** - 客户端 GLM-4.5-Flash 集成，支持流式传输
+- ⛓️ **区块链下载追踪** - 通过 Sui 事件实现实时统计
+- 🎨 **交互式用户体验** - 烟花动画、Toast 通知、钱包持久化
 
-### 2. 个人中心
+### 🔮 即将推出
+
+#### 1. 个人中心
 - 已上传模型的个人控制面板
 - 用户统计和活动追踪
 - 模型管理界面
 - 下载历史和分析
 
-### 3. Hugging Face 对接
+#### 2. Hugging Face 对接
 - 直接从 [Hugging Face](https://huggingface.co/) 导入模型
 - 同步模型元数据和标签
 - 一键从 Hugging Face 部署到 Walrus
 - 跨平台模型发现
 
-敬请期待更新！欢迎贡献和建议。
+#### 3. 自定义域名支持
+- 自带域名功能
+- SSL 证书管理
+- DNS 配置指南
+
+欢迎贡献和建议！
 
 ## 📧 支持
 
 - **问题反馈**：通过 [GitHub Issues](../../issues) 报告 bug 或请求功能
 - **讨论**：在 [GitHub Discussions](../../discussions) 中加入对话
 - **文档**：查看 [DEPLOYMENT.md](./DEPLOYMENT.md) 了解部署详情
+
+## 🙏 致谢
+
+我们要感谢以下个人和社区对本项目的支持和贡献：
+
+- **[Google Antigravity](https://antigravity.google/)、[Kiro](https://kiro.dev/)**  - 驱动本项目开发的先进 AI 编程助手
+- **[SUI 中文社区](https://x.com/SuiNetworkCN)** - 提供社区支持和生态推广
+- **[HOH 水分子社区](https://x.com/0xHOH)** - 提供技术指导和社区参与
+- **[uvd](https://x.com/wangtxxl)** - 提供宝贵的见解和反馈
 
 ---
 
