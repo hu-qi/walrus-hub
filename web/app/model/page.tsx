@@ -6,15 +6,15 @@ import { downloadBlob } from "@/lib/walrus";
 import { Model } from "@/lib/types";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
+import { useState, useMemo, Suspense } from "react";
 import confetti from "canvas-confetti";
 import { useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
 
-export default function ModelDetailPage() {
-    const params = useParams();
-    const blobId = params.blobId as string;
+function ModelDetailContent() {
+    const searchParams = useSearchParams();
+    const blobId = searchParams.get('id');
     const account = useCurrentAccount();
     const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
     const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -37,9 +37,9 @@ export default function ModelDetailPage() {
     });
 
     // Find the specific model by blob ID
-    const modelEvent = eventsData?.data?.find((event: any) =>
+    const modelEvent = blobId ? eventsData?.data?.find((event: any) =>
         event.parsedJson?.blob_id === blobId
-    );
+    ) : null;
 
     const model: Model | undefined = modelEvent ? {
         blobId: (modelEvent.parsedJson as any).blob_id,
@@ -68,6 +68,23 @@ export default function ModelDetailPage() {
             toast.error("Failed to copy", { position: "top-center" });
         }
     };
+
+    if (!blobId) {
+        return (
+            <div className="max-w-4xl mx-auto py-12 px-6">
+                <Link href="/" className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-6 transition-colors">
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Back to Home
+                </Link>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
+                    <h2 className="text-2xl font-bold text-yellow-600 mb-2">Missing Model ID</h2>
+                    <p className="text-yellow-600">Please provide a model ID in the URL query parameter.</p>
+                </div>
+            </div>
+        );
+    }
 
     if (isPending) {
         return (
@@ -308,5 +325,20 @@ export default function ModelDetailPage() {
                 )}
             </div>
         </div>
+    );
+}
+
+export default function ModelDetailPage() {
+    return (
+        <Suspense fallback={
+            <div className="max-w-4xl mx-auto py-12 px-6">
+                <div className="animate-pulse">
+                    <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
+                    <div className="h-64 bg-gray-200 rounded"></div>
+                </div>
+            </div>
+        }>
+            <ModelDetailContent />
+        </Suspense>
     );
 }

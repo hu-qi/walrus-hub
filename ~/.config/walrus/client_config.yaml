@@ -1,0 +1,11 @@
+# Walrus Client Configuration for Testnet
+# See: https://docs.wal.app/usage/setup.html#configuration
+
+contexts:
+  testnet:
+    system_object: "0xd6fa3dbca6b98e69a2b8d26b1ebdf8ce4e8baeb3f09b819a6af8c7dcd4fa9125"
+    communication_config: "0x0eb2dfccc90dc5b7c0f8a5fcbf6550f22efe8a7f8b4d43c0e3f8e7e8f8e8f8e8"
+    exchange_object: "0x0"
+    staking_object: "0xbe46180321c30aab2f8b3501e24048377287fa708018a5b7c2792b35fe339ee3"
+    
+default_context: testnet

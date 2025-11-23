@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSignAndExecuteTransaction, useCurrentAccount } from "@mysten/dapp-kit";
@@ -9,6 +9,7 @@ import { uploadBlob } from "@/lib/walrus";
 import { PACKAGE_ID, REGISTRY_ID, MODULE_NAME } from "@/lib/contracts";
 import { useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
+import { LLMConfigManager, DEFAULT_LLM_CONFIG } from "@/lib/llm-config";
 
 export default function UploadPage() {
     const [file, setFile] = useState<File | null>(null);
@@ -28,7 +29,15 @@ export default function UploadPage() {
     const [llmApiKey, setLlmApiKey] = useState("");
     const [llmBaseURL, setLlmBaseURL] = useState("");
 
-
+    // Load LLM configuration from localStorage on mount
+    useEffect(() => {
+        const config = LLMConfigManager.loadConfig();
+        if (config) {
+            setLlmApiKey(config.apiKey);
+            setLlmBaseURL(config.baseURL);
+            setLlmModel(config.model);
+        }
+    }, []);
 
     const handleGenerateMetadata = async () => {
         if (!name) {
@@ -36,60 +45,38 @@ export default function UploadPage() {
             return;
         }
 
+        // Check if API Key is configured
+        if (!llmApiKey || llmApiKey.trim() === '') {
+            toast.error("Please configure your LLM API Key in Advanced Settings", {
+                position: "top-center",
+                duration: 5000,
+                icon: "⚙️",
+            });
+            setShowAdvancedConfig(true);
+            return;
+        }
+
         setIsGenerating(true);
         const toastId = toast.loading("Generating metadata with AI...", { position: "top-center" });
 
         try {
-            // Prepare LLM config if user provided any custom values
-            const llmConfig: any = {};
-            if (llmModel) llmConfig.model = llmModel;
-            if (llmApiKey) llmConfig.apiKey = llmApiKey;
-            if (llmBaseURL) llmConfig.baseURL = llmBaseURL;
-
-            const response = await fetch("/api/generate-metadata", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    modelName: name,
-                    ...(Object.keys(llmConfig).length > 0 && { llmConfig })
-                }),
-            });
-
-            if (!response.ok) {
-                throw new Error(await response.text());
-            }
-
-            if (!response.body) {
-                throw new Error("No response body");
-            }
+            // Prepare LLM config with user's settings
+            const llmConfig = {
+                apiKey: llmApiKey,
+                baseURL: llmBaseURL || "https://api.openai.com/v1",
+                model: llmModel || "gpt-3.5-turbo",
+            };
 
             // Clear existing fields
             setDescription("");
             setTags("");
 
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-
             // Stream buffers: what we've received vs what we've displayed
-            let streamBuffer = "";
             let displayedDescLength = 0;
             let displayedTagsLength = 0;
             let isStreamComplete = false;
             let animationFrameId: number | null = null;
-
-            // Start the reading process
-            const readStream = async () => {
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) {
-                        isStreamComplete = true;
-                        break;
-                    }
-
-                    const chunk = decoder.decode(value, { stream: true });
-                    streamBuffer += chunk;
-                }
-            };
+            let currentBuffer = "";
 
             // Start typing animation with RAF for smooth updates
             const startTypingAnimation = () => {
@@ -99,18 +86,26 @@ export default function UploadPage() {
                     const deltaTime = currentTimestamp - lastTimestamp;
 
                     // Dynamic speed: type faster if there's a backlog
-                    // Base speed: ~50 chars per second
-                    // Speed up to ~200 chars per second if there's a large backlog
-                    const parsedData = parseStreamBuffer(streamBuffer);
+                    const parsedData = { description: "", tags: [] as string[] };
+                    if (currentBuffer) {
+                        const tagsIndex = currentBuffer.indexOf("Tags:");
+                        if (tagsIndex !== -1) {
+                            parsedData.description = currentBuffer.substring(0, tagsIndex).replace("Description:", "").trim();
+                            const tagsString = currentBuffer.substring(tagsIndex + 5).replace(/[\[\]]/g, "").trim();
+                            parsedData.tags = tagsString.split(',').map(t => t.trim()).filter(t => t);
+                        } else {
+                            parsedData.description = currentBuffer.replace("Description:", "").trim();
+                        }
+                    }
+
                     const descBacklog = parsedData.description.length - displayedDescLength;
-                    const tagsBacklog = parsedData.tags.length - displayedTagsLength;
+                    const tagsBacklog = parsedData.tags.join(", ").length - displayedTagsLength;
                     const totalBacklog = descBacklog + tagsBacklog;
 
                     // Calculate chars to type this frame based on backlog
-                    // More backlog = faster typing (to catch up)
                     const baseCharsPerSecond = 50;
                     const maxCharsPerSecond = 200;
-                    const backlogThreshold = 100; // Start speeding up after 100 chars backlog
+                    const backlogThreshold = 100;
 
                     let charsPerSecond = baseCharsPerSecond;
                     if (totalBacklog > backlogThreshold) {
@@ -130,20 +125,21 @@ export default function UploadPage() {
                     }
 
                     // Type tags characters (only after description is complete)
+                    const tagsString = parsedData.tags.join(", ");
                     if (displayedDescLength >= parsedData.description.length &&
-                        displayedTagsLength < parsedData.tags.length) {
+                        displayedTagsLength < tagsString.length) {
                         displayedTagsLength = Math.min(
                             displayedTagsLength + charsToType,
-                            parsedData.tags.length
+                            tagsString.length
                         );
-                        setTags(parsedData.tags.slice(0, displayedTagsLength));
+                        setTags(tagsString.slice(0, displayedTagsLength));
                     }
 
                     lastTimestamp = currentTimestamp;
 
                     // Continue animation if there's more to type or stream is still running
                     if (displayedDescLength < parsedData.description.length ||
-                        displayedTagsLength < parsedData.tags.length ||
+                        displayedTagsLength < tagsString.length ||
                         !isStreamComplete) {
                         animationFrameId = requestAnimationFrame(animate);
                     } else {
@@ -155,27 +151,20 @@ export default function UploadPage() {
                 animationFrameId = requestAnimationFrame(animate);
             };
 
-            // Helper to parse the stream buffer
-            const parseStreamBuffer = (buffer: string) => {
-                let description = "";
-                let tags = "";
-
-                const tagsIndex = buffer.indexOf("Tags:");
-                if (tagsIndex !== -1) {
-                    // Both sections present
-                    description = buffer.substring(0, tagsIndex).replace("Description:", "").trim();
-                    tags = buffer.substring(tagsIndex + 5).replace(/[\[\]]/g, "").trim();
-                } else {
-                    // Only description so far
-                    description = buffer.replace("Description:", "").trim();
-                }
-
-                return { description, tags };
-            };
-
-            // Start both processes concurrently
+            // Start typing animation
             startTypingAnimation();
-            await readStream();
+
+            // Use LLMClient to generate metadata
+            const { LLMClient } = await import("@/lib/llm-client");
+            await LLMClient.generateMetadata(
+                { modelName: name, llmConfig },
+                (chunk) => {
+                    currentBuffer = chunk;
+                }
+            );
+
+            // Mark stream as complete
+            isStreamComplete = true;
 
             // Wait for typing animation to complete
             await new Promise<void>((resolve) => {
@@ -193,7 +182,7 @@ export default function UploadPage() {
 
         } catch (error: any) {
             console.error("Generation failed:", error);
-            toast.error("Failed to generate metadata", { id: toastId });
+            toast.error(error.message || "Failed to generate metadata", { id: toastId });
         } finally {
             setIsGenerating(false);
         }
@@ -303,8 +292,11 @@ export default function UploadPage() {
 
                         {/* Modal Body */}
                         <div className="px-6 py-5 space-y-4">
+                            <p className="text-sm text-gray-900 bg-yellow-50 border border-yellow-300 rounded-lg px-3 py-2 font-medium">
+                                🔑 API Key Required
+                            </p>
                             <p className="text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
-                                💡 Leave fields blank to use system defaults
+                                💡 For security, you must provide your own LLM API Key. Your key is stored locally in your browser and never sent to our servers.
                             </p>
 
                             <div>
@@ -354,16 +346,39 @@ export default function UploadPage() {
                                     setLlmModel("");
                                     setLlmApiKey("");
                                     setLlmBaseURL("");
+                                    LLMConfigManager.clearConfig();
+                                    toast.success("Configuration cleared");
                                 }}
                                 className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
                             >
                                 Clear All
                             </button>
                             <button
-                                onClick={() => setShowAdvancedConfig(false)}
+                                onClick={() => {
+                                    // Validate and save configuration
+                                    if (!llmApiKey || llmApiKey.trim() === '') {
+                                        toast.error("API Key is required");
+                                        return;
+                                    }
+
+                                    const config = {
+                                        apiKey: llmApiKey,
+                                        baseURL: llmBaseURL || DEFAULT_LLM_CONFIG.baseURL!,
+                                        model: llmModel || DEFAULT_LLM_CONFIG.model!,
+                                    };
+
+                                    if (!LLMConfigManager.validateConfig(config)) {
+                                        toast.error("Invalid configuration. Please check your inputs.");
+                                        return;
+                                    }
+
+                                    LLMConfigManager.saveConfig(config);
+                                    toast.success("Configuration saved!");
+                                    setShowAdvancedConfig(false);
+                                }}
                                 className="px-5 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:shadow-lg transition-all"
                             >
-                                Done
+                                Save & Close
                             </button>
                         </div>
                     </div>

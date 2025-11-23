@@ -171,3 +171,262 @@ export const MODULE_NAME = "model_hub";
 cd ../web
 npm run dev
 ```
+
+
+---
+
+# Walrus Sites 静态部署指南
+
+## 概述
+
+Walrus Sites 是一个去中心化的静态网站托管平台。本项目已完全支持静态导出，可以部署到 Walrus Sites。
+
+## 架构变更
+
+### 从混合模式到纯静态
+
+**之前（混合模式）：**
+- Next.js SSR + API Routes
+- 服务器端 AI 元数据生成
+- 硬编码的默认 API Key
+
+**现在（纯静态）：**
+- Next.js 静态导出
+- 客户端直接调用 LLM API
+- 用户提供自己的 API Key
+
+## 部署步骤
+
+### 1. 安装依赖
+
+确保已安装以下工具：
+
+```bash
+# Sui CLI
+curl -fsSL https://sui.io/install.sh | sh
+
+# Walrus CLI
+curl -sSf https://install.wal.app | sh -s -- -n testnet
+
+# site-builder
+cargo install --git https://github.com/MystenLabs/walrus-sites site-builder
+```
+
+### 2. 构建静态站点
+
+```bash
+cd web
+npm install
+npm run build
+```
+
+这会在 `web/out/` 目录生成静态文件。
+
+### 3. 验证构建输出
+
+```bash
+# 检查输出目录
+ls -la web/out/
+
+# 本地预览
+npx serve web/out
+```
+
+访问 http://localhost:3000 测试静态站点。
+
+### 4. 部署到 Walrus Sites
+
+使用 site-builder 工具：
+
+```bash
+site-builder publish web/out/
+```
+
+或使用自动化脚本：
+
+```bash
+./deploy-walrus-site.sh
+```
+
+### 5. 配置 SuiNS（可选）
+
+为你的站点配置人类可读的域名：
+
+```bash
+# 将 SuiNS 名称指向 Walrus Site 对象
+sui client call \
+  --package <suins-package> \
+  --module suins \
+  --function set_target_address \
+  --args <your-name> <site-object-id>
+```
+
+## 用户配置指南
+
+### 配置 LLM API Key
+
+由于 Walrus Sites 是纯静态托管，用户需要配置自己的 LLM API Key：
+
+1. **打开高级设置**
+   - 在上传页面点击设置图标（⚙️）
+
+2. **输入配置**
+   - **API Key**（必需）：你的 LLM API Key
+   - **Base URL**（可选）：默认 `https://api.openai.com/v1`
+   - **Model**（可选）：默认 `gpt-3.5-turbo`
+
+3. **保存配置**
+   - 点击 "Save & Close"
+   - 配置保存在浏览器 localStorage 中
+
+### 支持的 LLM 提供商
+
+以下提供商支持 CORS，可在浏览器中直接调用：
+
+| 提供商 | Base URL | 模型示例 |
+|--------|----------|----------|
+| OpenAI | `https://api.openai.com/v1` | `gpt-3.5-turbo`, `gpt-4` |
+| Anthropic | `https://api.anthropic.com` | `claude-3-5-sonnet-20241022` |
+| GLM (智谱) | `https://open.bigmodel.cn/api/paas/v4/` | `glm-4` |
+
+## 技术细节
+
+### 静态导出配置
+
+`web/next.config.ts`:
+```typescript
+const nextConfig: NextConfig = {
+  output: 'export',  // 启用静态导出
+  images: {
+    unoptimized: true,  // 禁用图片优化
+  },
+};
+```
+
+### 客户端 LLM 调用
+
+`web/lib/llm-client.ts`:
+```typescript
+const client = new OpenAI({
+  apiKey: llmConfig.apiKey,
+  baseURL: llmConfig.baseURL,
+  dangerouslyAllowBrowser: true,  // 允许浏览器调用
+});
+```
+
+### 配置持久化
+
+`web/lib/llm-config.ts`:
+```typescript
+// 保存到 localStorage
+LLMConfigManager.saveConfig(config);
+
+// 从 localStorage 加载
+const config = LLMConfigManager.loadConfig();
+```
+
+## 常见问题
+
+### Q: 为什么需要用户提供 API Key？
+
+**A:** Walrus Sites 是纯静态托管，无法运行服务器端代码。为了安全和去中心化，我们让用户使用自己的 API Key，这样：
+- 不会泄露开发者的 API Key
+- 用户完全控制自己的 API 使用
+- 符合 Web3 去中心化精神
+
+### Q: API Key 安全吗？
+
+**A:** 是的，API Key 仅存储在用户浏览器的 localStorage 中，不会发送到任何服务器。所有 LLM API 调用都是从浏览器直接发送到 LLM 提供商。
+
+### Q: 动态路由如何工作？
+
+**A:** 我们使用客户端路由。虽然 `/model/[blobId]` 是动态路由，但所有数据获取都在客户端通过 Sui RPC 完成。
+
+### Q: 如何更新已部署的站点？
+
+**A:** 重新构建并部署：
+```bash
+cd web
+npm run build
+site-builder publish out/
+```
+
+### Q: CORS 错误怎么办？
+
+**A:** 确保使用支持 CORS 的 LLM 提供商。如果提供商不支持浏览器直接调用，可以：
+1. 使用支持 CORS 的替代提供商
+2. 部署自己的 CORS 代理（不推荐，失去去中心化优势）
+
+## 测试
+
+运行测试以验证静态导出：
+
+```bash
+cd web
+npm run test
+```
+
+所有测试应该通过，包括：
+- LLM 配置管理测试
+- LLM 客户端测试
+- 上传页面测试
+- 构建输出验证测试
+
+## 性能优化
+
+### 1. 代码分割
+
+Next.js 自动进行代码分割，确保只加载必要的代码。
+
+### 2. 资源压缩
+
+构建时自动压缩 JavaScript 和 CSS。
+
+### 3. Walrus 网络优化
+
+使用多个 aggregator 端点实现故障转移：
+
+```typescript
+export const WALRUS_AGGREGATORS = [
+  "https://aggregator.walrus-testnet.walrus.space",
+  "https://sui-walrus-tn-aggregator.bwarelabs.com",
+  // ... 更多端点
+];
+```
+
+## 监控和调试
+
+### 查看构建输出
+
+```bash
+ls -la web/out/
+```
+
+应该看到：
+- `index.html` - 主页
+- `upload.html` - 上传页面
+- `model/_placeholder.html` - 模型详情页占位符
+- `_next/` - Next.js 资源
+- 其他静态资源
+
+### 本地测试
+
+```bash
+npx serve web/out
+```
+
+在浏览器中测试所有功能：
+- ✅ 浏览模型列表
+- ✅ 搜索模型
+- ✅ 连接钱包
+- ✅ 上传模型
+- ✅ 配置 LLM API Key
+- ✅ 生成 AI 元数据
+- ✅ 下载模型
+
+## 参考资源
+
+- [Walrus Sites 文档](https://docs.wal.app/walrus-sites/intro.html)
+- [Next.js 静态导出](https://nextjs.org/docs/app/building-your-application/deploying/static-exports)
+- [Sui 文档](https://docs.sui.io)
+- [site-builder GitHub](https://github.com/MystenLabs/walrus-sites)

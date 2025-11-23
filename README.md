@@ -124,6 +124,82 @@ npm run dev
 
 Visit [http://localhost:3000](http://localhost:3000) to access the application.
 
+## 🌐 Walrus Sites Deployment
+
+The application is fully compatible with [Walrus Sites](https://docs.wal.app/walrus-sites/intro.html) - a decentralized static site hosting platform.
+
+### Prerequisites
+
+- Sui CLI installed and configured
+- Sufficient SUI tokens for gas fees
+- Walrus CLI installed
+- site-builder tool installed
+
+### Install site-builder
+
+```bash
+cargo install --git https://github.com/MystenLabs/walrus-sites site-builder
+```
+
+### Deploy to Walrus Sites
+
+1. **Build the static site:**
+
+```bash
+cd web
+npm run build
+```
+
+This creates a static export in the `web/out/` directory.
+
+2. **Deploy using site-builder:**
+
+```bash
+site-builder publish web/out/
+```
+
+Or use the automated deployment script:
+
+```bash
+./deploy-walrus-site.sh
+```
+
+3. **Access your site:**
+
+After deployment, you'll receive a Walrus Sites URL like:
+```
+https://<site-id>.wal.app
+```
+
+### Important Notes for Walrus Sites
+
+- **No Server-Side Code**: The app runs entirely in the browser
+- **User API Keys Required**: Users must provide their own LLM API keys for AI metadata generation
+- **Client-Side Routing**: All routing and data fetching happens in the browser
+- **Decentralized**: No backend servers required - fully decentralized!
+
+### Configuring LLM API Key
+
+Since Walrus Sites is a static hosting platform, users need to configure their own LLM API key:
+
+1. Click the settings icon (⚙️) on the upload page
+2. Enter your LLM configuration:
+   - **API Key** (required): Your OpenAI-compatible API key
+   - **Base URL** (optional): Default is `https://api.openai.com/v1`
+   - **Model** (optional): Default is `gpt-3.5-turbo`
+3. Click "Save & Close"
+
+Your API key is stored locally in your browser and never sent to any server.
+
+### Supported LLM Providers
+
+The following providers support CORS and work with browser-based requests:
+
+- OpenAI (GPT-3.5, GPT-4)
+- Anthropic Claude
+- GLM (Zhipu AI)
+- Any OpenAI-compatible API with CORS enabled
+
 ## 🛠️ Tech Stack
 
 ### Smart Contracts
